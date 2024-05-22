@@ -7,19 +7,31 @@ const url = `https://swapi-api.alx-tools.com/api/films/${id}`;
 request.get(url, (error, response, body) => {
   if (error) {
     console.log(error);
-  } else {
-    const content = JSON.parse(body);
-    const characters = content.characters;
-    // console.log(characters);
-    for (const character of characters) {
-      request.get(character, (error, response, body) => {
-        if (error) {
-          console.log(error);
-        } else {
-          const names = JSON.parse(body);
-          console.log(names.name);
-        }
-      });
-    }
+    return;
   }
+
+  const content = JSON.parse(body);
+  const characters = content.characters;
+  // Array to hold all promises
+  const characterPromises = characters.map(characterUrl => {
+    return new Promise((resolve, reject) => {
+      request.get(characterUrl, (error, response, body) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        const character = JSON.parse(body);
+        resolve(character.name);
+      });
+    });
+  });
+
+  // Wait for all character promises to complete
+  Promise.all(characterPromises)
+    .then(characterNames => {
+      characterNames.forEach(name => console.log(name));
+    })
+    .catch(error => {
+      console.log(error);
+    });
 });
